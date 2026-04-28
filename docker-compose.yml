@@ -1,0 +1,56 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Second Brain — local Docker Compose stack
+# Usage:
+#   cp .env.example .env          # fill in your values
+#   docker compose up --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: second_brain
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api-server:
+    build:
+      context: .
+      dockerfile: artifacts/api-server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/second_brain
+      PORT: "8080"
+      NODE_ENV: production
+      LOG_LEVEL: info
+      # Set exactly ONE of the OpenAI options:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: artifacts/second-brain/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api-server
+    ports:
+      - "3000:80"
+
+volumes:
+  db-data:

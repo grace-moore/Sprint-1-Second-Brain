@@ -44,7 +44,7 @@ export default function Recap() {
   if (isLoading || isAnalysisLoading) {
     return (
       <Layout>
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-6" aria-busy="true" aria-label="Loading recap">
           <Skeleton className="h-10 w-1/3 mb-8" />
           <Skeleton className="h-64 w-full" />
         </div>
@@ -52,18 +52,24 @@ export default function Recap() {
     );
   }
 
-  if (!session) return <Layout><div>Session not found.</div></Layout>;
+  if (!session) return <Layout><div role="alert">Session not found.</div></Layout>;
 
   const biasCount = analysis?.biasCount ?? 0;
   const fallacyCount = analysis?.fallacyCount ?? 0;
   const oppositionCount = analysis?.oppositionCount ?? 0;
   const acceptedCount = analysis?.acceptedCount ?? 0;
+  const totalCount = biasCount + fallacyCount + oppositionCount;
+
+  const activeRating = hoverRating || rating || session.rating || 0;
 
   return (
     <Layout>
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 bg-green-100 text-green-700 rounded-full flex items-center justify-center mb-4">
+          <div
+            className="mx-auto w-12 h-12 bg-green-100 text-green-700 rounded-full flex items-center justify-center mb-4"
+            aria-hidden="true"
+          >
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Session Complete</h1>
@@ -76,53 +82,61 @@ export default function Recap() {
             <CardDescription>Breakdown of identified issues</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+            <dl className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
               <div className="flex flex-col items-center p-6 bg-[#F9FAFB] rounded-lg border border-border">
-                <Scale className="w-8 h-8 text-primary mb-3" />
-                <span className="text-3xl font-bold" data-testid="count-biases">{biasCount}</span>
-                <span className="text-sm font-medium text-muted-foreground mt-1">Biases</span>
+                <Scale className="w-8 h-8 text-primary mb-3" aria-hidden="true" />
+                <dt className="text-sm font-medium text-muted-foreground mt-1 order-last">Biases</dt>
+                <dd className="text-3xl font-bold" data-testid="count-biases">{biasCount}</dd>
               </div>
               <div className="flex flex-col items-center p-6 bg-[#F9FAFB] rounded-lg border border-border">
-                <Target className="w-8 h-8 text-primary mb-3" />
-                <span className="text-3xl font-bold" data-testid="count-fallacies">{fallacyCount}</span>
-                <span className="text-sm font-medium text-muted-foreground mt-1">Fallacies</span>
+                <Target className="w-8 h-8 text-primary mb-3" aria-hidden="true" />
+                <dt className="text-sm font-medium text-muted-foreground mt-1 order-last">Fallacies</dt>
+                <dd className="text-3xl font-bold" data-testid="count-fallacies">{fallacyCount}</dd>
               </div>
               <div className="flex flex-col items-center p-6 bg-[#F9FAFB] rounded-lg border border-border">
-                <ShieldAlert className="w-8 h-8 text-primary mb-3" />
-                <span className="text-3xl font-bold" data-testid="count-opposition">{oppositionCount}</span>
-                <span className="text-sm font-medium text-muted-foreground mt-1">Counter-arguments</span>
+                <ShieldAlert className="w-8 h-8 text-primary mb-3" aria-hidden="true" />
+                <dt className="text-sm font-medium text-muted-foreground mt-1 order-last">Counter-arguments</dt>
+                <dd className="text-3xl font-bold" data-testid="count-opposition">{oppositionCount}</dd>
               </div>
-            </div>
+            </dl>
             {acceptedCount > 0 && (
-              <div className="mt-6 text-center text-sm text-muted-foreground">
+              <p className="mt-6 text-center text-sm text-muted-foreground" aria-live="polite">
                 You accepted <span className="font-semibold text-foreground">{acceptedCount}</span> of{" "}
-                <span className="font-semibold text-foreground">{biasCount + fallacyCount + oppositionCount}</span> identified issues
-              </div>
+                <span className="font-semibold text-foreground">{totalCount}</span> identified issues
+              </p>
             )}
           </CardContent>
         </Card>
 
         <Card className="border-border shadow-sm">
           <CardHeader className="text-center">
-            <CardTitle>How helpful was this review?</CardTitle>
+            <CardTitle id="rating-label">How helpful was this review?</CardTitle>
           </CardHeader>
           <CardContent className="flex justify-center pb-8">
-            <div className="flex gap-2">
+            <div
+              role="radiogroup"
+              aria-labelledby="rating-label"
+              className="flex gap-2"
+            >
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
+                  role="radio"
+                  aria-checked={rating === star || session.rating === star}
                   onClick={() => handleRate(star)}
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(0)}
-                  className="p-1 focus:outline-none"
+                  className="p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={`Rate ${star} out of 5 stars`}
                   data-testid={`button-rate-${star}`}
                 >
                   <Star 
                     className={`w-8 h-8 transition-colors ${
-                      star <= (hoverRating || rating || session.rating || 0)
+                      star <= activeRating
                         ? "fill-amber-400 text-amber-400"
                         : "text-muted-foreground/30 hover:text-muted-foreground/50"
                     }`}
+                    aria-hidden="true"
                   />
                 </button>
               ))}
@@ -135,7 +149,7 @@ export default function Recap() {
             Back to Workspace
           </Button>
           <Button onClick={() => setLocation('/progress')} data-testid="button-view-progress">
-            <BarChart3 className="w-4 h-4 mr-2" />
+            <BarChart3 className="w-4 h-4 mr-2" aria-hidden="true" />
             View Overall Progress
           </Button>
         </div>

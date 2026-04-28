@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateSession } from "@workspace/api-client-react";
@@ -73,6 +73,12 @@ export default function NewSession() {
     );
   };
 
+  const methods: { value: InputMethod; label: string; description: string; icon: typeof FileText }[] = [
+    { value: "blank", label: "Start Blank", description: "Write a new argument from scratch in the editor.", icon: FileText },
+    { value: "paste", label: "Paste Draft", description: "Paste an existing draft into the editor.", icon: ClipboardPaste },
+    { value: "upload", label: "Upload Document", description: "Upload a saved text file for review.", icon: FileUp },
+  ];
+
   return (
     <Layout>
       <div className="max-w-2xl mx-auto space-y-8">
@@ -91,75 +97,54 @@ export default function NewSession() {
               onChange={(e) => setTitle(e.target.value)}
               className="max-w-md h-11"
               data-testid="input-session-title"
+              aria-required="true"
             />
           </div>
 
-          <div className="space-y-3">
-            <Label className="text-base font-medium">Starting Point</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card 
-                className={`cursor-pointer transition-all ${method === "blank" ? "border-primary ring-1 ring-primary/20 bg-primary/5" : "hover:border-border/80"}`}
-                onClick={() => setMethod("blank")}
-                data-testid="card-method-blank"
-              >
-                <CardHeader className="p-4 pb-2">
-                  <div className="bg-white border border-border w-10 h-10 rounded-md flex items-center justify-center mb-2">
-                    <FileText className={`w-5 h-5 ${method === "blank" ? "text-primary" : "text-muted-foreground"}`} />
-                  </div>
-                  <CardTitle className="text-base">Start Blank</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0 text-sm text-muted-foreground">
-                  Write a new argument from scratch in the editor.
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={`cursor-pointer transition-all ${method === "paste" ? "border-primary ring-1 ring-primary/20 bg-primary/5" : "hover:border-border/80"}`}
-                onClick={() => setMethod("paste")}
-                data-testid="card-method-paste"
-              >
-                <CardHeader className="p-4 pb-2">
-                  <div className="bg-white border border-border w-10 h-10 rounded-md flex items-center justify-center mb-2">
-                    <ClipboardPaste className={`w-5 h-5 ${method === "paste" ? "text-primary" : "text-muted-foreground"}`} />
-                  </div>
-                  <CardTitle className="text-base">Paste Draft</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0 text-sm text-muted-foreground">
-                  Paste an existing draft into the editor.
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={`cursor-pointer transition-all ${method === "upload" ? "border-primary ring-1 ring-primary/20 bg-primary/5" : "hover:border-border/80"}`}
-                onClick={() => setMethod("upload")}
-                data-testid="card-method-upload"
-              >
-                <CardHeader className="p-4 pb-2">
-                  <div className="bg-white border border-border w-10 h-10 rounded-md flex items-center justify-center mb-2">
-                    <FileUp className={`w-5 h-5 ${method === "upload" ? "text-primary" : "text-muted-foreground"}`} />
-                  </div>
-                  <CardTitle className="text-base">Upload Document</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0 text-sm text-muted-foreground">
-                  Upload a saved text file for review.
-                </CardContent>
-              </Card>
+          <fieldset className="space-y-3">
+            <legend className="text-base font-medium">Starting Point</legend>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" role="radiogroup" aria-label="Choose how to start your session">
+              {methods.map(({ value, label, description, icon: Icon }) => (
+                <Card 
+                  key={value}
+                  role="radio"
+                  aria-checked={method === value}
+                  tabIndex={0}
+                  className={`cursor-pointer transition-all ${method === value ? "border-primary ring-1 ring-primary/20 bg-primary/5" : "hover:border-border/80"}`}
+                  onClick={() => setMethod(value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMethod(value); } }}
+                  data-testid={`card-method-${value}`}
+                >
+                  <CardHeader className="p-4 pb-2">
+                    <div className="bg-white border border-border w-10 h-10 rounded-md flex items-center justify-center mb-2" aria-hidden="true">
+                      <Icon className={`w-5 h-5 ${method === value ? "text-primary" : "text-muted-foreground"}`} />
+                    </div>
+                    <CardTitle className="text-base">{label}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0 text-sm text-muted-foreground">
+                    {description}
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          </div>
+          </fieldset>
 
           {method === "paste" && (
             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
               <Label className="text-sm font-medium">Content</Label>
               <div className="flex gap-2">
                 <Button variant="secondary" onClick={handlePaste} data-testid="button-paste-clipboard">
-                  <ClipboardPaste className="w-4 h-4 mr-2" />
+                  <ClipboardPaste className="w-4 h-4 mr-2" aria-hidden="true" />
                   Paste from Clipboard
                 </Button>
               </div>
               {content && (
-                <div className="p-3 bg-white border border-border rounded-md text-sm text-muted-foreground max-h-32 overflow-hidden relative">
+                <div
+                  className="p-3 bg-white border border-border rounded-md text-sm text-muted-foreground max-h-32 overflow-hidden relative"
+                  aria-label="Preview of pasted content"
+                >
                   {content.slice(0, 200)}...
-                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" aria-hidden="true" />
                 </div>
               )}
             </div>
@@ -167,16 +152,22 @@ export default function NewSession() {
 
           {method === "upload" && (
             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
-              <Label className="text-sm font-medium">Select File (.txt)</Label>
+              <Label htmlFor="file-upload" className="text-sm font-medium">Select File (.txt)</Label>
               <div className="flex items-center gap-4">
                 <Input 
+                  id="file-upload"
                   type="file" 
                   accept=".txt" 
                   onChange={handleFileUpload}
                   className="max-w-sm"
                   data-testid="input-file-upload"
+                  aria-describedby={fileName ? "file-loaded-status" : undefined}
                 />
-                {fileName && <span className="text-sm text-muted-foreground">{fileName} loaded</span>}
+                {fileName && (
+                  <span id="file-loaded-status" className="text-sm text-muted-foreground" aria-live="polite">
+                    {fileName} loaded
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -189,10 +180,11 @@ export default function NewSession() {
               onClick={handleCreate} 
               disabled={createSession.isPending}
               size="lg"
+              aria-busy={createSession.isPending}
               data-testid="button-create-session"
             >
               {createSession.isPending ? "Creating..." : "Enter Workspace"}
-              <ArrowRight className="w-4 h-4 ml-2" />
+              <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
             </Button>
           </div>
         </div>

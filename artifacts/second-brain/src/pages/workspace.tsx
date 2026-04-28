@@ -48,7 +48,6 @@ export default function Workspace() {
   const lastSaved = useRef({ content: "" });
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize content once
   useEffect(() => {
     if (session && initializedForId.current !== sessionId) {
       initializedForId.current = sessionId;
@@ -56,12 +55,10 @@ export default function Workspace() {
       lastSaved.current = { content: session.content || "" };
       if (session.status === 'analyzing') {
         setIsAnalyzing(true);
-        // If it's stuck analyzing on load, we might need a status check or manual reset, but we'll assume SSE handles it.
       }
     }
   }, [session, sessionId]);
 
-  // Auto-save logic
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
@@ -95,7 +92,6 @@ export default function Workspace() {
 
     setIsAnalyzing(true);
     
-    // First save current content
     if (content !== lastSaved.current.content) {
       await updateSession.mutateAsync({ id: sessionId, data: { content } });
       lastSaved.current = { content };
@@ -148,8 +144,7 @@ export default function Workspace() {
     updateAnalysisItem.mutate(
       { id: sessionId, itemId, data: { accepted: newAccepted } },
       {
-        onSuccess: (updatedItem) => {
-          // Optimistically update cache
+        onSuccess: () => {
           queryClient.setQueryData(getGetAnalysisQueryKey(sessionId), (old: any) => {
             if (!old) return old;
             return {
@@ -170,7 +165,7 @@ export default function Workspace() {
   if (sessionLoading) {
     return (
       <Layout>
-        <div className="space-y-6">
+        <div className="space-y-6" aria-busy="true" aria-label="Loading session">
           <Skeleton className="h-10 w-1/3" />
           <div className="flex gap-6 h-[600px]">
             <Skeleton className="w-1/2 h-full" />
@@ -181,7 +176,7 @@ export default function Workspace() {
     );
   }
 
-  if (!session) return <Layout><div>Session not found.</div></Layout>;
+  if (!session) return <Layout><div role="alert">Session not found.</div></Layout>;
 
   const biasItems = analysis?.items.filter(i => i.type === "bias") || [];
   const fallacyItems = analysis?.items.filter(i => i.type === "fallacy") || [];
@@ -189,6 +184,20 @@ export default function Workspace() {
 
   return (
     <Layout>
+      {/* Live region for analysis status — screen readers announce changes */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {isAnalyzing
+          ? "Analyzing your argument, please wait."
+          : analysis
+          ? `Analysis complete. Found ${biasItems.length} biases, ${fallacyItems.length} fallacies, and ${oppositionItems.length} counter-arguments.`
+          : ""}
+      </div>
+
       <div className="flex flex-col h-[calc(100vh-120px)] space-y-4">
         {/* Header */}
         <div className="flex justify-between items-start shrink-0">
@@ -197,11 +206,11 @@ export default function Workspace() {
               <h1 className="text-2xl font-bold tracking-tight">{session.title}</h1>
               {session.status === "complete" ? (
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Complete
+                  <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" /> Complete
                 </Badge>
               ) : session.status === "analyzing" || isAnalyzing ? (
                 <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Analyzing
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" aria-hidden="true" /> Analyzing
                 </Badge>
               ) : (
                 <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
@@ -209,10 +218,18 @@ export default function Workspace() {
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground" aria-live="polite">
               <span>Updated {format(new Date(session.updatedAt), "MMM d, h:mm a")}</span>
-              {saveStatus === "saving" && <span className="flex items-center text-amber-600"><Save className="w-3 h-3 mr-1" /> Saving...</span>}
-              {saveStatus === "saved" && <span className="flex items-center text-green-600"><CheckCircle2 className="w-3 h-3 mr-1" /> Saved</span>}
+              {saveStatus === "saving" && (
+                <span className="flex items-center text-amber-600" aria-live="polite">
+                  <Save className="w-3 h-3 mr-1" aria-hidden="true" /> Saving...
+                </span>
+              )}
+              {saveStatus === "saved" && (
+                <span className="flex items-center text-green-600" aria-live="polite">
+                  <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" /> Saved
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -228,12 +245,14 @@ export default function Workspace() {
             <Button 
               onClick={handleRunChallenge} 
               disabled={isAnalyzing || !content.trim()}
+              aria-busy={isAnalyzing}
+              aria-label={isAnalyzing ? "Challenge in progress, please wait" : "Run AI challenge analysis on your argument"}
               data-testid="button-run-challenge"
             >
               {isAnalyzing ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Challenging...</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> Challenging...</>
               ) : (
-                <><Play className="w-4 h-4 mr-2 fill-current" /> Run Challenge</>
+                <><Play className="w-4 h-4 mr-2 fill-current" aria-hidden="true" /> Run Challenge</>
               )}
             </Button>
           </div>
@@ -243,23 +262,35 @@ export default function Workspace() {
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
           {/* Editor */}
           <div className="flex flex-col bg-white border border-border rounded-lg shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-border bg-muted/30 font-medium text-sm flex justify-between items-center">
-              <span>Argument Text</span>
+            <div
+              className="px-4 py-3 border-b border-border bg-muted/30 font-medium text-sm"
+              id="editor-label"
+            >
+              Argument Text
             </div>
             <Textarea 
+              id="argument-editor"
               value={content}
               onChange={handleContentChange}
               placeholder="Write or paste your argument here..."
+              aria-labelledby="editor-label"
+              aria-describedby="editor-hint"
               className="flex-1 border-0 rounded-none resize-none p-6 text-base leading-relaxed focus-visible:ring-0 focus-visible:ring-offset-0"
               data-testid="textarea-content"
             />
+            <p id="editor-hint" className="sr-only">
+              Your argument text. Changes are saved automatically. Click Run Challenge to analyse the argument.
+            </p>
           </div>
 
           {/* Analysis */}
           <div className="flex flex-col bg-white border border-border rounded-lg shadow-sm overflow-hidden">
             <Tabs defaultValue="bias" className="flex flex-col h-full w-full">
               <div className="border-b border-border px-2">
-                <TabsList className="bg-transparent h-12 w-full justify-start gap-6 rounded-none p-0">
+                <TabsList
+                  className="bg-transparent h-12 w-full justify-start gap-6 rounded-none p-0"
+                  aria-label="Analysis categories"
+                >
                   <TabsTrigger 
                     value="bias" 
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full px-2"
@@ -284,13 +315,16 @@ export default function Workspace() {
               <div className="flex-1 overflow-hidden">
                 <ScrollArea className="h-full w-full bg-[#F9FAFB]/50">
                   {isAnalyzing ? (
-                    <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-                      <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary" />
+                    <div
+                      className="flex flex-col items-center justify-center h-64 text-muted-foreground"
+                      aria-label="Analysing argument, please wait"
+                    >
+                      <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary" aria-hidden="true" />
                       <p>Analyzing argument...</p>
                     </div>
                   ) : !analysis ? (
                     <div className="flex flex-col items-center justify-center h-64 text-muted-foreground text-center px-6">
-                      <AlertCircle className="w-8 h-8 mb-4 text-muted-foreground/50" />
+                      <AlertCircle className="w-8 h-8 mb-4 text-muted-foreground/50" aria-hidden="true" />
                       <p>Run Challenge to generate analysis.</p>
                       <p className="text-sm mt-2">The AI will identify biases, fallacies, and counter-arguments.</p>
                     </div>
@@ -356,6 +390,7 @@ function AnalysisItemCard({ item, onToggle }: { item: any, onToggle: () => void 
           checked={!!item.accepted} 
           onCheckedChange={onToggle}
           className="mt-1"
+          aria-label={`Mark "${item.content}" as accepted`}
           data-testid={`checkbox-accept-${item.id}`}
         />
         <div className="flex-1 space-y-2">

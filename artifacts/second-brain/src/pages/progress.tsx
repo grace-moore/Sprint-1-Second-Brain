@@ -13,7 +13,7 @@ export default function Progress() {
   if (isLoading) {
     return (
       <Layout>
-        <div className="space-y-8">
+        <div className="space-y-8" aria-busy="true" aria-label="Loading progress data">
           <Skeleton className="h-10 w-1/4" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Skeleton className="h-32 w-full" />
@@ -27,15 +27,47 @@ export default function Progress() {
     );
   }
 
-  if (!progress) return <Layout><div>Could not load progress data.</div></Layout>;
+  if (!progress) return <Layout><div role="alert">Could not load progress data.</div></Layout>;
 
-  // Format data for chart
   const chartData = [...progress.dataPoints]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .map(point => ({
       ...point,
       displayDate: format(parseISO(point.date), "MMM d"),
     }));
+
+  const totalIssues = progress.totalBiasIdentified + progress.totalFallaciesIdentified + progress.totalOppositionGenerated;
+
+  const stats = [
+    {
+      label: "Completed Sessions",
+      value: progress.completedSessions,
+      subtitle: `of ${progress.totalSessions} total`,
+      icon: Trophy,
+      iconClass: "text-primary",
+    },
+    {
+      label: "Accepted Feedback",
+      value: progress.totalItemsAccepted,
+      subtitle: "items acknowledged",
+      icon: CheckCircle2,
+      iconClass: "text-green-600",
+    },
+    {
+      label: "Total Issues Found",
+      value: totalIssues,
+      subtitle: "across all categories",
+      icon: Target,
+      iconClass: "text-destructive",
+    },
+    {
+      label: "Average Rating",
+      value: progress.averageRating?.toFixed(1) || "—",
+      subtitle: "out of 5.0",
+      icon: Star,
+      iconClass: "text-amber-500",
+    },
+  ];
 
   return (
     <Layout>
@@ -45,61 +77,22 @@ export default function Progress() {
           <p className="text-muted-foreground mt-1">Track your critical thinking development over time.</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-border shadow-sm">
-            <CardHeader className="pb-2 pt-5 px-5">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                <Trophy className="w-4 h-4 mr-2 text-primary" />
-                Completed Sessions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-5 pb-5">
-              <div className="text-3xl font-bold">{progress.completedSessions}</div>
-              <p className="text-xs text-muted-foreground mt-1">of {progress.totalSessions} total</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border shadow-sm">
-            <CardHeader className="pb-2 pt-5 px-5">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-                Accepted Feedback
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-5 pb-5">
-              <div className="text-3xl font-bold">{progress.totalItemsAccepted}</div>
-              <p className="text-xs text-muted-foreground mt-1">items acknowledged</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border shadow-sm">
-            <CardHeader className="pb-2 pt-5 px-5">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                <Target className="w-4 h-4 mr-2 text-destructive" />
-                Total Issues Found
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-5 pb-5">
-              <div className="text-3xl font-bold">
-                {progress.totalBiasIdentified + progress.totalFallaciesIdentified + progress.totalOppositionGenerated}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">across all categories</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border shadow-sm">
-            <CardHeader className="pb-2 pt-5 px-5">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                <Star className="w-4 h-4 mr-2 text-amber-500" />
-                Average Rating
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-5 pb-5">
-              <div className="text-3xl font-bold">{progress.averageRating?.toFixed(1) || "-"}</div>
-              <p className="text-xs text-muted-foreground mt-1">out of 5.0</p>
-            </CardContent>
-          </Card>
-        </div>
+        <dl className="grid grid-cols-2 md:grid-cols-4 gap-4" aria-label="Progress statistics">
+          {stats.map(({ label, value, subtitle, icon: Icon, iconClass }) => (
+            <Card key={label} className="border-border shadow-sm">
+              <CardHeader className="pb-2 pt-5 px-5">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
+                  <Icon className={`w-4 h-4 mr-2 ${iconClass}`} aria-hidden="true" />
+                  {label}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 pb-5">
+                <dd className="text-3xl font-bold">{value}</dd>
+                <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </dl>
 
         <Card className="border-border shadow-sm">
           <CardHeader>
@@ -108,7 +101,11 @@ export default function Progress() {
           </CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
-              <div className="h-[400px] w-full mt-4">
+              <div
+                className="h-[400px] w-full mt-4"
+                role="img"
+                aria-label={`Line chart showing session history. ${chartData.length} sessions recorded. Total issues found across sessions vs issues accepted.`}
+              >
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={chartData}
@@ -157,7 +154,10 @@ export default function Progress() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-[400px] w-full flex items-center justify-center border border-dashed border-border rounded-md mt-4">
+              <div
+                className="h-[400px] w-full flex items-center justify-center border border-dashed border-border rounded-md mt-4"
+                role="status"
+              >
                 <p className="text-muted-foreground">Complete sessions to see your progress chart.</p>
               </div>
             )}

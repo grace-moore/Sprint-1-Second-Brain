@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import path from "path";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -30,5 +31,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// Serve the compiled React frontend (only present in production / Azure deploy)
+const frontendPath = path.join(import.meta.dirname, "../../second-brain/dist/public");
+app.use(express.static(frontendPath));
+
+// SPA fallback — send all non-API routes to index.html
+app.get("/{*path}", (_req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
 
 export default app;

@@ -77,11 +77,11 @@ jobs:
         with:
           name: node-app
 
-      # Azure will replace this step with its own deployment credentials
-      # when you connect the App Service to this GitHub repository.
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'second-brain'     # replace with your Azure App Service name
+          app-name: 'Second-Brain'
+          slot-name: 'Production'
           package: .
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_8EC63B583CCD41D1AB11B0912B5D60D5 }}

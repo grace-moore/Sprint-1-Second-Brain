@@ -1,4 +1,5 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +12,13 @@ import Workspace from "./pages/workspace";
 import Recap from "./pages/recap";
 import Progress from "./pages/progress";
 
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+    dataLayer?: unknown[];
+  }
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -19,6 +27,16 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function Analytics() {
+  const [location] = useLocation();
+  useEffect(() => {
+    if (typeof window.gtag === "function") {
+      window.gtag("config", "G-DR50MD0S5J", { page_path: location });
+    }
+  }, [location]);
+  return null;
+}
 
 function Router() {
   return (
@@ -39,6 +57,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Analytics />
           <Router />
         </WouterRouter>
         <Toaster />

@@ -1,55 +1,53 @@
-# Second Brain
+# 🧠 Second Brain
 
 **Second Brain** is an AI-powered academic argument analysis tool designed to help university students write stronger, more rigorous arguments. Instead of just checking grammar, Second Brain challenges your thinking — identifying hidden biases, logical fallacies, and counter-arguments before you publish or submit.
 
 🌐 **Live app:** [gracessecondbrain.com](https://gracessecondbrain.com)
 
+![Second Brain Screenshot](screenshot.png)
+
 ---
 
-## What It Does
+## 🚀 Tech Stack
+
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Azure](https://img.shields.io/badge/Azure-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
+
+---
+
+## 💡 What It Does
 
 Students paste or type an academic argument into the workspace. With one click, the AI analyzes the writing and surfaces:
 
-- **Biases** — subjective framing, confirmation bias, and emotional appeals
-- **Logical Fallacies** — straw man arguments, ad hominem attacks, slippery slopes, and more
-- **Opposition Arguments** — the strongest counter-arguments a critic could raise
+- 🔍 **Biases** — subjective framing, confirmation bias, and emotional appeals
+- ⚠️ **Logical Fallacies** — straw man arguments, ad hominem attacks, slippery slopes, and more
+- 💬 **Opposition Arguments** — the strongest counter-arguments a critic could raise
 
 Each finding includes an explanation, and students can accept or dismiss individual items. A recap page summarizes the session, and a progress page tracks improvement over time.
 
 ---
 
-## Features
+## ✨ Features
 
 | Feature | Description |
 |---|---|
-| Landing page | Overview of the tool with a call-to-action |
-| Sessions dashboard | Create and manage multiple argument review sessions |
-| New session flow | Start blank, paste from clipboard, or upload a `.txt` file |
-| Argument workspace | Editable text editor with auto-save |
-| AI analysis | Streaming AI feedback via Server-Sent Events |
-| Bias / Fallacy / Opposition tabs | Categorized findings with accept/reject toggles |
-| Recap page | Session summary with counts and star rating |
-| Progress page | Stats overview and line chart tracking issues over time |
-| Accessibility | WCAG 2.1 AA compliant — ARIA landmarks, skip links, semantic markup |
+| 🏠 Landing page | Overview of the tool with a call-to-action |
+| 📋 Sessions dashboard | Create and manage multiple argument review sessions |
+| ✏️ New session flow | Start blank, paste from clipboard, or upload a `.txt` file |
+| 💻 Argument workspace | Editable text editor with auto-save |
+| 🤖 AI analysis | Streaming AI feedback via Server-Sent Events |
+| 🗂️ Bias / Fallacy / Opposition tabs | Categorized findings with accept/reject toggles |
+| 📊 Recap page | Session summary with counts and star rating |
+| 📈 Progress page | Stats overview and line chart tracking issues over time |
+| ♿ Accessibility | WCAG 2.1 AA compliant — ARIA landmarks, skip links, semantic markup |
 
 ---
 
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React, Vite, Tailwind CSS v4, shadcn/ui |
-| Backend | Node.js, Express 5 |
-| Database | PostgreSQL + Drizzle ORM |
-| AI | OpenAI API (GPT-4o) |
-| Deployment | Azure App Service (API + frontend) |
-| CI/CD | GitHub Actions |
-| DNS & Domain | Namecheap + Azure Custom Domains (HTTPS) |
-| Analytics | Google Analytics (GA4) |
-
----
-
-## Project Structure
+## 🗂️ Project Structure
 
 ```
 ├── artifacts/
@@ -64,7 +62,7 @@ Each finding includes an explanation, and students can accept or dismiss individ
 
 ---
 
-## Running Locally
+## 🛠️ Running Locally
 
 **Prerequisites:** Node.js 22+, pnpm, PostgreSQL
 
@@ -88,14 +86,21 @@ pnpm --filter @workspace/second-brain run dev
 
 ---
 
-## Deployment
+## ☁️ Deployment
 
 The app is deployed to **Azure App Service** with a custom domain and free managed SSL certificate. CI/CD is handled by GitHub Actions — every push to `main` automatically builds and deploys both the frontend and API.
 
-See `.env.example` for all required environment variables.
+**Environment variables required:**
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `SESSION_SECRET` | Random secret for session signing |
+| `NODE_ENV` | Set to `production` |
 
 ---
 
-## Why Second Brain?
+## 🎯 Why Second Brain?
 
 Most writing tools make your writing *sound* better. Second Brain makes your *thinking* stronger. It is built for students who want to pressure-test their logic before their instructor does.
